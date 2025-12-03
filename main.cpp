@@ -115,8 +115,8 @@ bool canMove(int dx, int dy){
 }
 
 void removeLine(){
-    if (speed > 60)
-        speed -= 20;
+    if(speed <= 400)
+        speed += 10;
 }
 
 int main()
