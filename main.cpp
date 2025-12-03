@@ -116,6 +116,35 @@ bool canMove(int dx, int dy){
 void removeLine(){
 }
 
+void rotateBlock() {
+    char temp[4][4];
+    // Xoay 90 độ: [j][3-i]
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            temp[j][3 - i] = blocks[b][i][j];
+        }
+    }
+
+    // Kiểm tra va chạm sau khi xoay
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (temp[i][j] != ' ') {
+                int tx = x + j;
+                int ty = y + i;
+                if (tx < 1 || tx >= W - 1 || ty >= H - 1) return; // Đụng tường
+                if (board[ty][tx] != ' ') return; // Đụng gạch khác
+            }
+        }
+    }
+
+    // Nếu ổn thì gán ngược lại
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            blocks[b][i][j] = temp[i][j];
+        }
+    }
+}
+
 int main()
 {
     srand(time(0));
