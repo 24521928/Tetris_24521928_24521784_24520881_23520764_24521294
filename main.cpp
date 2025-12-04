@@ -123,7 +123,7 @@ void draw() {
                     case 'Z': setColor(12); break; // Red
                     default:  setColor(7);  break; // White
                 }
-                cout << "\xDB\xDB";
+                cout << "[]";
 
                 setColor(7); 
             }
