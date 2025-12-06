@@ -115,8 +115,30 @@ bool canMove(int dx, int dy){
 }
 
 void removeLine(){
-    if(speed <= 400)
-        speed += 10;
+    for(int i = H - 2; i > 0; i--){
+        bool isFull = true;
+        for(int j = 1; j < W-1; j++){
+            if(board[i][j] == ' '){
+                isFull = false;
+                break;
+            }
+        }
+        if(isFull){
+            for(int k = i ; k > 0 ; k--){
+                for(int j = 1; j < W-1; j++){
+                    // if the line is the first one => it only remove that line
+                    if(k != 1){
+                        board[k][j] = board[k-1][j];
+                    }
+                    else{
+                        board[k][j] = ' ';
+                    }
+                }
+            }
+        }
+        //recheck: whether the new line is full
+        i++;
+    }
 }
 
 int main()
