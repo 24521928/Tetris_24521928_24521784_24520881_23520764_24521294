@@ -96,11 +96,39 @@ void initBoard(){
             if ((i==H-1) || (j==0) || (j == W-1)) board[i][j] = '#';
             else board[i][j] = ' ';
 }
-void draw(){
-    gotoxy(0,0);
-    for (int i = 0 ; i < H ; i++, cout<<endl)
-        for (int j = 0 ; j < W ; j++)
-            cout<<board[i][j];
+void setColor(int color) {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, color);
+}
+void draw() {
+    gotoxy(0, 0);
+    for (int i = 0; i < H; i++, cout << endl) {
+        for (int j = 0; j < W; j++) {
+            if (board[i][j] == ' ') {
+                cout << "  ";
+            }
+            else if (board[i][j] == '#') {
+                setColor(8);
+                cout << "\xB2\xB2"; 
+                setColor(7);
+            }
+            else {
+                switch (board[i][j]) {
+                    case 'I': setColor(11); break; // Cyan
+                    case 'J': setColor(9);  break; // Blue
+                    case 'L': setColor(6);  break; // Orange brown
+                    case 'O': setColor(14); break; // Yellow
+                    case 'S': setColor(10); break; // Green
+                    case 'T': setColor(13); break; // Purple
+                    case 'Z': setColor(12); break; // Red
+                    default:  setColor(7);  break; // White
+                }
+                cout << "[]";
+
+                setColor(7); 
+            }
+        }
+    }
 }
 bool canMove(int dx, int dy){
     for (int i = 0 ; i < 4 ; i++)
