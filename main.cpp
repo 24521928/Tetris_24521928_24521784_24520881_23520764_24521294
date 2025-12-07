@@ -167,6 +167,8 @@ void removeLine(){
         //recheck: whether the new line is full
         i++;
     }
+    if(speed >= 100)
+        speed -= 5;
 }
 
 void rotateBlock() {
