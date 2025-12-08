@@ -141,7 +141,10 @@ bool canMove(int dx, int dy){
             }
     return true;
 }
-
+void SpeedIncrement()
+{
+    speed = max(100, speed - 5);    //  max speed boundary 
+}
 void removeLine(){
     for(int i = H - 2; i > 0; i--){
         bool isFull = true;
@@ -167,8 +170,7 @@ void removeLine(){
         //recheck: whether the new line is full
         i++;
     }
-    if(speed >= 100)
-        speed -= 5;
+    SpeedIncrement();
 }
 
 void rotateBlock() {
