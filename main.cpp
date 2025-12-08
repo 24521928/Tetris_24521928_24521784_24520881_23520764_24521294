@@ -127,11 +127,12 @@ void removeLine(){
                 }
             }
             i++;
+             //recheck: whether the new line is full
+            if (speed < 400){
+                speed += 50;
+            }
         }
-        //recheck: whether the new line is full
-        if (speed < 400){
-            speed += 50;
-        }
+       
     }
 }
 
