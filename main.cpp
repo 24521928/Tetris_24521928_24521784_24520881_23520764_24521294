@@ -10,42 +10,6 @@ char blocks[][4][4] = {
          {' ','I',' ',' '},
          {' ','I',' ',' '},
          {' ','I',' ',' '}},
-        {{' ','I',' ',' '},
-         {' ','I',' ',' '},
-         {' ','I',' ',' '},
-         {' ','I',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {'I','I','I','I'},
-         {' ',' ',' ',' '},
-         {' ',' ',' ',' '}},
         {{' ',' ',' ',' '},
          {' ','O','O',' '},
          {' ','O','O',' '},
@@ -144,28 +108,51 @@ bool canMove(int dx, int dy){
 
 void removeLine(){
     for(int i = H - 2; i > 0; i--){
-        bool isFull = true;
         for(int j = 1; j < W-1; j++){
             if(board[i][j] == ' '){
-                isFull = false;
-                break;
+                return;
             }
         }
-        if(isFull){
-            for(int k = i ; k > 0 ; k--){
-                for(int j = 1; j < W-1; j++){
-                    // if the line is the first one => it only remove that line
-                    if(k != 1){
-                        board[k][j] = board[k-1][j];
-                    }
-                    else{
-                        board[k][j] = ' ';
-                    }
+        for(int k = i ; k > 0 ; k--){
+            for(int j = 1; j < W-1; j++){
+                // if the line is the first one => it only remove that line
+                if(k != 1){
+                    board[k][j] = board[k-1][j];
+                }
+                else{
+                    board[k][j] = ' ';
                 }
             }
         }
         //recheck: whether the new line is full
         i++;
+        if (speed < 400){
+            speed += 50;
+        }
+    }
+}
+
+void rotateBlock() {
+    char temp[4][4];
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            temp[j][3 - i] = blocks[b][i][j];
+        }
+    }
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (temp[i][j] != ' ') {
+                int tx = x + j;
+                int ty = y + i;
+                if (tx < 1 || tx >= W - 1 || ty >= H - 1) return; 
+                if (board[ty][tx] != ' ') return; 
+            }
+        }
+    }
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            blocks[b][i][j] = temp[i][j];
+        }
     }
 }
 
@@ -182,6 +169,7 @@ int main()
             if (c=='a' && canMove(-1,0)) x--;
             if (c=='d' && canMove(1,0) ) x++;
             if (c=='x' && canMove(0,1))  y++;
+            if (c=='w') rotateBlock();
             if (c=='q') break;
         }
         if (canMove(0,1)) y++;
