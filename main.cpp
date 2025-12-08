@@ -10,42 +10,6 @@ char blocks[][4][4] = {
          {' ','I',' ',' '},
          {' ','I',' ',' '},
          {' ','I',' ',' '}},
-        {{' ','I',' ',' '},
-         {' ','I',' ',' '},
-         {' ','I',' ',' '},
-         {' ','I',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {' ','O','O',' '},
-         {' ','O','O',' '},
-         {' ',' ',' ',' '}},
-        {{' ',' ',' ',' '},
-         {'I','I','I','I'},
-         {' ',' ',' ',' '},
-         {' ',' ',' ',' '}},
         {{' ',' ',' ',' '},
          {' ','O','O',' '},
          {' ','O','O',' '},
@@ -144,28 +108,27 @@ bool canMove(int dx, int dy){
 
 void removeLine(){
     for(int i = H - 2; i > 0; i--){
-        bool isFull = true;
         for(int j = 1; j < W-1; j++){
             if(board[i][j] == ' '){
-                isFull = false;
-                break;
+                return;
             }
         }
-        if(isFull){
-            for(int k = i ; k > 0 ; k--){
-                for(int j = 1; j < W-1; j++){
-                    // if the line is the first one => it only remove that line
-                    if(k != 1){
-                        board[k][j] = board[k-1][j];
-                    }
-                    else{
-                        board[k][j] = ' ';
-                    }
+        for(int k = i ; k > 0 ; k--){
+            for(int j = 1; j < W-1; j++){
+                // if the line is the first one => it only remove that line
+                if(k != 1){
+                    board[k][j] = board[k-1][j];
+                }
+                else{
+                    board[k][j] = ' ';
                 }
             }
         }
         //recheck: whether the new line is full
         i++;
+        if (speed < 400){
+            speed += 50;
+        }
     }
     if(speed >= 100)
         speed -= 5;
