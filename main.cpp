@@ -11,7 +11,7 @@ using namespace std;
 
 char board[H][W] = {};
 int x = 4, y = 0;
-int speed = 200;
+int speed = 400;
 
 class Piece {
 public:
@@ -197,9 +197,12 @@ bool canMove(int dx, int dy) {
             }
     return true;
 }
-
-void removeLine() {
-    for (int i = H - 2; i > 0; i--) {
+void SpeedIncrement()
+{
+    speed = max(100, speed - 30);
+}
+void removeLine(){
+    for(int i = H - 2; i > 0; i--){
         bool isFull = true;
         for (int j = 1; j < W - 1; j++) {
             if (board[i][j] == ' ') {
@@ -217,11 +220,11 @@ void removeLine() {
                     }
                 }
             }
+            //recheck: whether the new line is full
             i++;
-            if (speed < 400) {
-                speed += 50; 
-            }
-        }
+            
+            SpeedIncrement();
+        }   
     }
 }
 
