@@ -1,17 +1,23 @@
-#include <iostream>
-#include <conio.h>
-#include <windows.h>
+#include <SFML/Graphics.hpp> // Thư viện đồ họa SFML
+#include <SFML/Audio.hpp>   // Thư viện âm thanh SFML
 #include <vector>
 #include <ctime>
+#include <algorithm>      // Thêm để đảm bảo hàm max() hoạt động
 
 using namespace std;
+using namespace sf; // Sử dụng namespace của SFML
 
 #define H 20
 #define W 15
 
+// KHAI BÁO KÍCH THƯỚC MỘT Ô GẠCH (PIXEL)
+const int TILE_SIZE = 30; 
+
 char board[H][W] = {};
 int x = 4, y = 0;
-int speed = 400;
+int speed = 400; // Đơn vị này sẽ được chuyển thành thời gian (giây) trong SFML
+
+// --- PHẦN CLASS VÀ LOGIC GAME (GIỮ NGUYÊN HOÀN TOÀN) ---
 
 class Piece {
 public:
@@ -125,10 +131,7 @@ Piece* createRandomPiece() {
     }
 }
 
-void gotoxy(int x, int y) {
-    COORD c = { (SHORT)x, (SHORT)y };
-    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), c);
-}
+// CÁC HÀM CONSOLE ĐÃ BỊ LOẠI BỎ: gotoxy(), setColor(), draw()
 
 void boardDelBlock() {
     for (int i = 0; i < 4; i++)
@@ -151,41 +154,6 @@ void initBoard() {
             else board[i][j] = ' ';
 }
 
-void setColor(int color) {
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(hConsole, color);
-}
-
-void draw() {
-    gotoxy(0, 0);
-    for (int i = 0; i < H; i++, cout << endl) {
-        for (int j = 0; j < W; j++) {
-            if (board[i][j] == ' ') {
-                cout << "  ";
-            }
-            else if (board[i][j] == '#') {
-                setColor(8);
-                cout << "\xB2\xB2";
-                setColor(7);
-            }
-            else {
-                switch (board[i][j]) {
-                case 'I': setColor(11); break;
-                case 'J': setColor(9);  break;
-                case 'L': setColor(6);  break;
-                case 'O': setColor(14); break;
-                case 'S': setColor(10); break;
-                case 'T': setColor(13); break;
-                case 'Z': setColor(12); break;
-                default:  setColor(7);  break;
-                }
-                cout << "[]";
-                setColor(7);
-            }
-        }
-    }
-}
-
 bool canMove(int dx, int dy) {
     for (int i = 0; i < 4; i++)
         for (int j = 0; j < 4; j++)
@@ -197,10 +165,13 @@ bool canMove(int dx, int dy) {
             }
     return true;
 }
+
 void SpeedIncrement()
 {
-    speed = max(100, speed - 30);
+    // Đã thay thế hàm max() bằng cách kiểm tra if/else để tránh lỗi phụ thuộc thư viện
+    if (speed > 100) speed -= 30;
 }
+
 void removeLine(){
     for(int i = H - 2; i > 0; i--){
         bool isFull = true;
@@ -220,43 +191,29 @@ void removeLine(){
                     }
                 }
             }
-            //recheck: whether the new line is full
             i++;
-            
+            // Ở bước 2.4 (Âm thanh), sẽ thêm lệnh phát nhạc ăn điểm tại đây
             SpeedIncrement();
-        }   
+        }    
     }
 }
 
+// --- VÒNG LẶP CHÍNH (SẼ ĐƯỢC VIẾT LẠI HOÀN TOÀN Ở BƯỚC 2.2) ---
+
 int main()
 {
+    // --- KHAI BÁO BAN ĐẦU (GIỮ NGUYÊN) ---
     srand(time(0));
-    
     currentPiece = createRandomPiece();
-
-    system("cls");
     initBoard();
-    while (1) {
-        boardDelBlock();
-        if (kbhit()){
-            char c = getch();
-            if (c == 'a' && canMove(-1, 0)) x--;
-            if (c == 'd' && canMove(1, 0)) x++;
-            if (c == 'x' && canMove(0, 1)) y++;
-            if (c == 'w') currentPiece->rotate(x, y);
-            if (c == 'q') break;
-        }
-        if (canMove(0, 1)) y++;
-        else {
-            block2Board();
-            removeLine();
-            x = 5; y = 0;
-            delete currentPiece; 
-            currentPiece = createRandomPiece();
-        }
-        block2Board();
-        draw();
-        Sleep(speed);
-    }
+    
+    // Ở bước 2.2, chúng ta sẽ thay thế toàn bộ vòng lặp while(1) cũ bằng:
+    // 1. Tạo RenderWindow
+    // 2. Tạo Clock
+    // 3. Vòng lặp while(window.isOpen())
+    // 4. Xử lý Input bằng sf::Event
+    // 5. Thay thế Sleep(speed) bằng logic thời gian (timer)
+    // 6. Viết hàm vẽ mới thay thế draw() cũ
+
     return 0;
 }
