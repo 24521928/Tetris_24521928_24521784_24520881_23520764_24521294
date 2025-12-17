@@ -1,55 +1,73 @@
-#include <SFML/Graphics.hpp> // Thư viện đồ họa SFML
-#include <SFML/Audio.hpp>   // Thư viện âm thanh SFML
+#include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <vector>
 #include <ctime>
-#include <algorithm>      // Thêm để đảm bảo hàm max() hoạt động
+#include <algorithm>
+#include <optional>
 
 using namespace std;
-using namespace sf; // Sử dụng namespace của SFML
+using namespace sf;
 
-#define H 20
-#define W 15
+// --- GAME CONFIGURATION ---
+const int H = 20;
+const int W = 15;
+const int TILE_SIZE = 30;
 
-// KHAI BÁO KÍCH THƯỚC MỘT Ô GẠCH (PIXEL)
-const int TILE_SIZE = 30; 
-
+// --- GLOBAL VARIABLES ---
 char board[H][W] = {};
 int x = 4, y = 0;
-int speed = 400; // Đơn vị này sẽ được chuyển thành thời gian (giây) trong SFML
+float gameDelay = 0.5f;
 
-// --- PHẦN CLASS VÀ LOGIC GAME (GIỮ NGUYÊN HOÀN TOÀN) ---
+// --- AUDIO RESOURCES ---
+sf::SoundBuffer clearBuffer;
+sf::Sound clearSound(clearBuffer);
+
+sf::SoundBuffer landBuffer;
+sf::Sound landSound(landBuffer);
+
+sf::Music bgMusic;
+
+// --- PIECE CLASSES ---
 
 class Piece {
 public:
     char shape[4][4];
 
     Piece() {
-        for (int i = 0; i < 4; i++)
-            for (int j = 0; j < 4; j++)
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
                 shape[i][j] = ' ';
+            }
+        }
     }
 
     virtual ~Piece() {}
 
     virtual void rotate(int currentX, int currentY) {
         char temp[4][4];
+
+        // 1. Rotate to temp matrix
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 temp[j][3 - i] = shape[i][j];
             }
         }
 
+        // 2. Check collision
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 if (temp[i][j] != ' ') {
                     int tx = currentX + j;
                     int ty = currentY + i;
-                    if (tx < 1 || tx >= W - 1 || ty >= H - 1) return; 
-                    if (board[ty][tx] != ' ') return; 
+                    
+                    // Check boundaries and existing blocks
+                    if (tx < 1 || tx >= W - 1 || ty >= H - 1) return;
+                    if (board[ty][tx] != ' ') return;
                 }
             }
         }
 
+        // 3. Apply rotation
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 shape[i][j] = temp[i][j];
@@ -61,7 +79,10 @@ public:
 class IPiece : public Piece {
 public:
     IPiece() {
-        shape[0][1] = 'I'; shape[1][1] = 'I'; shape[2][1] = 'I'; shape[3][1] = 'I';
+        shape[0][1] = 'I';
+        shape[1][1] = 'I';
+        shape[2][1] = 'I';
+        shape[3][1] = 'I';
     }
 };
 
@@ -71,7 +92,8 @@ public:
         shape[1][1] = 'O'; shape[1][2] = 'O';
         shape[2][1] = 'O'; shape[2][2] = 'O';
     }
-    void rotate(int currentX, int currentY) override {
+    void rotate(int, int) override {
+        // O Piece does not rotate
     }
 };
 
@@ -115,6 +137,8 @@ public:
     }
 };
 
+// --- GAME LOGIC ---
+
 Piece* currentPiece = nullptr;
 
 Piece* createRandomPiece() {
@@ -131,89 +155,210 @@ Piece* createRandomPiece() {
     }
 }
 
-// CÁC HÀM CONSOLE ĐÃ BỊ LOẠI BỎ: gotoxy(), setColor(), draw()
-
-void boardDelBlock() {
-    for (int i = 0; i < 4; i++)
-        for (int j = 0; j < 4; j++)
-            if (currentPiece->shape[i][j] != ' ' && y + j < H)
-                board[y + i][x + j] = ' ';
-}
-
 void block2Board() {
-    for (int i = 0; i < 4; i++)
-        for (int j = 0; j < 4; j++)
-            if (currentPiece->shape[i][j] != ' ')
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (currentPiece->shape[i][j] != ' ') {
                 board[y + i][x + j] = currentPiece->shape[i][j];
+            }
+        }
+    }
 }
 
 void initBoard() {
-    for (int i = 0; i < H; i++)
-        for (int j = 0; j < W; j++)
-            if ((i == H - 1) || (j == 0) || (j == W - 1)) board[i][j] = '#';
-            else board[i][j] = ' ';
+    for (int i = 0; i < H; i++) {
+        for (int j = 0; j < W; j++) {
+            if ((i == H - 1) || (j == 0) || (j == W - 1)) {
+                board[i][j] = '#';
+            } else {
+                board[i][j] = ' ';
+            }
+        }
+    }
 }
 
 bool canMove(int dx, int dy) {
-    for (int i = 0; i < 4; i++)
-        for (int j = 0; j < 4; j++)
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
             if (currentPiece->shape[i][j] != ' ') {
                 int tx = x + j + dx;
                 int ty = y + i + dy;
+                
                 if (tx < 1 || tx >= W - 1 || ty >= H - 1) return false;
                 if (board[ty][tx] != ' ') return false;
             }
+        }
+    }
     return true;
 }
 
-void SpeedIncrement()
-{
-    // Đã thay thế hàm max() bằng cách kiểm tra if/else để tránh lỗi phụ thuộc thư viện
-    if (speed > 100) speed -= 30;
+void SpeedIncrement() {
+    if (gameDelay > 0.1f) {
+        gameDelay -= 0.03f;
+    }
 }
 
-void removeLine(){
-    for(int i = H - 2; i > 0; i--){
+void removeLine() {
+    for (int i = H - 2; i > 0; i--) {
         bool isFull = true;
         for (int j = 1; j < W - 1; j++) {
             if (board[i][j] == ' ') {
                 isFull = false;
+                break;
             }
         }
+
         if (isFull) {
+            clearSound.play();
+            
+            // Shift rows down
             for (int k = i; k > 0; k--) {
                 for (int j = 1; j < W - 1; j++) {
                     if (k != 1) {
                         board[k][j] = board[k - 1][j];
-                    }
-                    else {
+                    } else {
                         board[k][j] = ' ';
                     }
                 }
             }
-            i++;
-            // Ở bước 2.4 (Âm thanh), sẽ thêm lệnh phát nhạc ăn điểm tại đây
+            i++; // Re-check the current row
             SpeedIncrement();
-        }    
+        }
     }
 }
 
-// --- VÒNG LẶP CHÍNH (SẼ ĐƯỢC VIẾT LẠI HOÀN TOÀN Ở BƯỚC 2.2) ---
+Color getColor(char c) {
+    switch (c) {
+        case 'I': return Color::Cyan;
+        case 'J': return Color::Blue;
+        case 'L': return Color(255, 165, 0); // Orange
+        case 'O': return Color::Yellow;
+        case 'S': return Color::Green;
+        case 'T': return Color(128, 0, 128); // Purple
+        case 'Z': return Color::Red;
+        case '#': return Color(100, 100, 100); // Grey
+        default:  return Color::Black;
+    }
+}
 
-int main()
-{
-    // --- KHAI BÁO BAN ĐẦU (GIỮ NGUYÊN) ---
+// --- MAIN FUNCTION ---
+
+int main() {
+    RenderWindow window(VideoMode(Vector2u(W * TILE_SIZE, H * TILE_SIZE)), "SS008 - Tetris");
+    window.setFramerateLimit(60);
+
+    // Load Audio
+    if (!bgMusic.openFromFile("loop_theme.wav")) return -1;
+    if (!clearBuffer.loadFromFile("line_clear.wav")) return -1;
+    if (!landBuffer.loadFromFile("bumper_end.wav")) return -1;
+
+    bgMusic.setLooping(true);
+    bgMusic.setVolume(50);
+    bgMusic.play();
+
+    // Init Game
     srand(time(0));
     currentPiece = createRandomPiece();
     initBoard();
-    
-    // Ở bước 2.2, chúng ta sẽ thay thế toàn bộ vòng lặp while(1) cũ bằng:
-    // 1. Tạo RenderWindow
-    // 2. Tạo Clock
-    // 3. Vòng lặp while(window.isOpen())
-    // 4. Xử lý Input bằng sf::Event
-    // 5. Thay thế Sleep(speed) bằng logic thời gian (timer)
-    // 6. Viết hàm vẽ mới thay thế draw() cũ
+
+    Clock clock;
+    float timer = 0;
+    float inputTimer = 0;
+    const float inputDelay = 0.1f;
+
+    while (window.isOpen()) {
+        float time = clock.getElapsedTime().asSeconds();
+        clock.restart();
+        timer += time;
+        inputTimer += time;
+
+        // --- EVENTS ---
+        while (const auto event = window.pollEvent()) {
+            if (event->is<Event::Closed>()) {
+                window.close();
+            }
+
+            if (const auto* keyPressed = event->getIf<Event::KeyPressed>()) {
+                // Rotate
+                if (keyPressed->code == Keyboard::Key::W) {
+                    currentPiece->rotate(x, y);
+                }
+                // Hard Drop
+                else if (keyPressed->code == Keyboard::Key::Space) {
+                    while (canMove(0, 1)) {
+                        y++;
+                    }
+                    timer = gameDelay + 10.0f; // Force lock immediately
+                }
+            }
+        }
+
+        // --- INPUT (Continuous) ---
+        if (inputTimer > inputDelay) {
+            if (Keyboard::isKeyPressed(Keyboard::Key::A)) {
+                if (canMove(-1, 0)) x--;
+                inputTimer = 0;
+            } else if (Keyboard::isKeyPressed(Keyboard::Key::D)) {
+                if (canMove(1, 0)) x++;
+                inputTimer = 0;
+            } else if (Keyboard::isKeyPressed(Keyboard::Key::S)) {
+                if (canMove(0, 1)) y++;
+                inputTimer = 0;
+            }
+        }
+
+        // --- GRAVITY & LOGIC ---
+        if (timer > gameDelay) {
+            if (canMove(0, 1)) {
+                y++;
+            } else {
+                landSound.play();
+
+                block2Board();
+                removeLine();
+
+                delete currentPiece;
+                currentPiece = createRandomPiece();
+                x = 4; 
+                y = 0;
+
+                // Game Over Check
+                if (!canMove(0, 0)) {
+                    window.close();
+                }
+            }
+            timer = 0;
+        }
+
+        // --- RENDER ---
+        window.clear(Color::Black);
+
+        // Draw Board
+        for (int i = 0; i < H; i++) {
+            for (int j = 0; j < W; j++) {
+                if (board[i][j] != ' ') {
+                    RectangleShape rect(Vector2f(TILE_SIZE - 1, TILE_SIZE - 1));
+                    rect.setPosition(Vector2f(j * TILE_SIZE, i * TILE_SIZE));
+                    rect.setFillColor(getColor(board[i][j]));
+                    window.draw(rect);
+                }
+            }
+        }
+
+        // Draw Current Piece
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                if (currentPiece->shape[i][j] != ' ') {
+                    RectangleShape rect(Vector2f(TILE_SIZE - 1, TILE_SIZE - 1));
+                    rect.setPosition(Vector2f((x + j) * TILE_SIZE, (y + i) * TILE_SIZE));
+                    rect.setFillColor(getColor(currentPiece->shape[i][j]));
+                    window.draw(rect);
+                }
+            }
+        }
+
+        window.display();
+    }
 
     return 0;
 }
