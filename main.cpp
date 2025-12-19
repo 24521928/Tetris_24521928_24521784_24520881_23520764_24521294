@@ -18,7 +18,7 @@ const int PLAY_H_PX = H * TILE_SIZE;
 // --- GLOBAL VARIABLES ---
 char board[H][W] = {};
 int x = 4, y = 0;
-float gameDelay = 0.5f;
+float gameDelay = 0.8f;
 
 // --- AUDIO RESOURCES ---
 sf::SoundBuffer clearBuffer;
@@ -155,7 +155,8 @@ Color getColor(char c) {
 // sidebar UI properties 
 int gScore = 0;
 int gLines = 0;
-int gLevel = 1;
+int gLevel = 0;
+int currentLevel = 0;
 //
 // Draw UI
 struct SidebarUI {
@@ -192,10 +193,14 @@ static SidebarUI makeSidebarUI() {
 }
 
 static void drawPanel(sf::RenderWindow& window, const sf::FloatRect& r) {
-    sf::RectangleShape box(r.size);
-    box.setPosition(r.position);
+    const float outline = 3.f;
+    const float inset = outline; 
+
+    sf::RectangleShape box({ r.size.x - 2.f*inset, r.size.y - 2.f*inset });
+    box.setPosition({ r.position.x + inset, r.position.y + inset });
+
     box.setFillColor(sf::Color::Black);
-    box.setOutlineThickness(3.f);
+    box.setOutlineThickness(outline);
     box.setOutlineColor(sf::Color(200, 200, 200));
     window.draw(box);
 }
@@ -271,18 +276,29 @@ static void drawSidebar(sf::RenderWindow& window, const SidebarUI& ui,
     drawText(window, font, "LINES", labelX, ui.linesBox.position.y + 10.f, 18);
     drawText(window, font, std::to_string(lines), labelX, ui.linesBox.position.y + 42.f, 24);
 
-    drawText(window, font, "NEXT", labelX, ui.nextBox.position.y + 10.f, 16);
+    drawText(window, font, "NEXT", labelX, ui.nextBox.position.y + 10.f, 18);
 
     // 4) preview
     drawNextPreview(window, ui, next);
 }
 // update score, level, lines
+void SpeedIncrement() {
+    if (gameDelay > 0.1f) {
+        gameDelay -= 0.08f;
+    }
+}
 void applyLineClearScore(int cleared) {
     if (cleared <= 0) return;
-
+    printf("Cleared Lines: %d\n", cleared);
+    printf("Score: %d\n", gScore);
+    printf("level: %d\n", gLevel);
     gLines += cleared;                  
     gScore += 100 * cleared;            // a cleared line give 100 points
     gLevel = 0 + (gLines / 10);         // a level costs 10 lines
+    if (gLevel > currentLevel) {
+        SpeedIncrement();
+        currentLevel = gLevel;
+    }
 }
 
 // --- GAME LOGIC ---
@@ -343,11 +359,7 @@ bool canMove(int dx, int dy) {
     return true;
 }
 
-void SpeedIncrement() {
-    if (gameDelay > 0.1f) {
-        gameDelay -= 0.03f;
-    }
-}
+
 
 int removeLine() {
     int cleared = 0;
@@ -367,7 +379,6 @@ int removeLine() {
                 }
             }
             i++; 
-            SpeedIncrement();
         }
     }
 
@@ -451,7 +462,6 @@ int main() {
                 y++;
             } else {
                 landSound.play();
-
                 block2Board();
                 int cleared = removeLine(); // check if a line is removed 
                 applyLineClearScore(cleared);  // apply changes for a cleared line
