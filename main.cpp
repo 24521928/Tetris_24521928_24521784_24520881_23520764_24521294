@@ -17,6 +17,7 @@ const int TILE_SIZE = 30;
 char board[H][W] = {};
 int x = 4, y = 0;
 float gameDelay = 0.5f;
+bool isGameOver = false; // Trạng thái game
 
 // --- AUDIO RESOURCES ---
 sf::SoundBuffer clearBuffer;
@@ -28,11 +29,9 @@ sf::Sound landSound(landBuffer);
 sf::Music bgMusic;
 
 // --- PIECE CLASSES ---
-
 class Piece {
 public:
     char shape[4][4];
-
     Piece() {
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
@@ -40,34 +39,24 @@ public:
             }
         }
     }
-
     virtual ~Piece() {}
-
     virtual void rotate(int currentX, int currentY) {
         char temp[4][4];
-
-        // 1. Rotate to temp matrix
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 temp[j][3 - i] = shape[i][j];
             }
         }
-
-        // 2. Check collision
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 if (temp[i][j] != ' ') {
                     int tx = currentX + j;
                     int ty = currentY + i;
-                    
-                    // Check boundaries and existing blocks
                     if (tx < 1 || tx >= W - 1 || ty >= H - 1) return;
                     if (board[ty][tx] != ' ') return;
                 }
             }
         }
-
-        // 3. Apply rotation
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
                 shape[i][j] = temp[i][j];
@@ -138,7 +127,6 @@ public:
 };
 
 // --- GAME LOGIC ---
-
 Piece* currentPiece = nullptr;
 
 Piece* createRandomPiece() {
@@ -155,7 +143,7 @@ Piece* createRandomPiece() {
     }
 }
 
-void block2Board() {
+void block2Board() { 
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
             if (currentPiece->shape[i][j] != ' ') {
@@ -168,22 +156,19 @@ void block2Board() {
 void initBoard() {
     for (int i = 0; i < H; i++) {
         for (int j = 0; j < W; j++) {
-            if ((i == H - 1) || (j == 0) || (j == W - 1)) {
-                board[i][j] = '#';
-            } else {
-                board[i][j] = ' ';
-            }
+            if ((i == H - 1) || (j == 0) || (j == W - 1)) board[i][j] = '#';
+            else board[i][j] = ' ';
         }
     }
 }
 
 bool canMove(int dx, int dy) {
+    if (!currentPiece) return false;
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
             if (currentPiece->shape[i][j] != ' ') {
                 int tx = x + j + dx;
                 int ty = y + i + dy;
-                
                 if (tx < 1 || tx >= W - 1 || ty >= H - 1) return false;
                 if (board[ty][tx] != ' ') return false;
             }
@@ -192,36 +177,34 @@ bool canMove(int dx, int dy) {
     return true;
 }
 
+void restartGame() {
+    initBoard();
+    if (currentPiece) delete currentPiece;
+    currentPiece = createRandomPiece();
+    x = 4; y = 0;
+    gameDelay = 0.5f;
+    isGameOver = false;
+}
+
 void SpeedIncrement() {
-    if (gameDelay > 0.1f) {
-        gameDelay -= 0.03f;
-    }
+    if (gameDelay > 0.1f) gameDelay -= 0.03f;
 }
 
 void removeLine() {
     for (int i = H - 2; i > 0; i--) {
         bool isFull = true;
         for (int j = 1; j < W - 1; j++) {
-            if (board[i][j] == ' ') {
-                isFull = false;
-                break;
-            }
+            if (board[i][j] == ' ') { isFull = false; break; }
         }
-
         if (isFull) {
             clearSound.play();
-            
-            // Shift rows down
             for (int k = i; k > 0; k--) {
                 for (int j = 1; j < W - 1; j++) {
-                    if (k != 1) {
-                        board[k][j] = board[k - 1][j];
-                    } else {
-                        board[k][j] = ' ';
-                    }
+                    if (k != 1) board[k][j] = board[k - 1][j];
+                    else board[k][j] = ' ';
                 }
             }
-            i++; // Re-check the current row
+            i++; 
             SpeedIncrement();
         }
     }
@@ -231,21 +214,23 @@ Color getColor(char c) {
     switch (c) {
         case 'I': return Color::Cyan;
         case 'J': return Color::Blue;
-        case 'L': return Color(255, 165, 0); // Orange
+        case 'L': return Color(255, 165, 0);
         case 'O': return Color::Yellow;
         case 'S': return Color::Green;
-        case 'T': return Color(128, 0, 128); // Purple
+        case 'T': return Color(128, 0, 128);
         case 'Z': return Color::Red;
-        case '#': return Color(100, 100, 100); // Grey
+        case '#': return Color(100, 100, 100);
         default:  return Color::Black;
     }
 }
 
 // --- MAIN FUNCTION ---
-
 int main() {
     RenderWindow window(VideoMode(Vector2u(W * TILE_SIZE, H * TILE_SIZE)), "SS008 - Tetris");
     window.setFramerateLimit(60);
+
+    Font font;
+    font.openFromFile("arial.ttf"); // font chung với các phần khác ( chờ được xem lại )
 
     // Load Audio
     if (!bgMusic.openFromFile("loop_theme.wav")) return -1;
@@ -262,81 +247,77 @@ int main() {
     initBoard();
 
     Clock clock;
-    float timer = 0;
-    float inputTimer = 0;
+    float timer = 0, inputTimer = 0;
     const float inputDelay = 0.1f;
 
     while (window.isOpen()) {
         float time = clock.getElapsedTime().asSeconds();
         clock.restart();
-        timer += time;
-        inputTimer += time;
+        if (!isGameOver) {
+            timer += time;
+            inputTimer += time;
+        }
 
         // --- EVENTS ---
         while (const auto event = window.pollEvent()) {
-            if (event->is<Event::Closed>()) {
-                window.close();
+            if (event->is<Event::Closed>()) window.close();
+
+            // Logic Click chuột khi Game Over
+            if (isGameOver && event->is<Event::MouseButtonPressed>()) {
+                Vector2i m = Mouse::getPosition(window);
+                if (m.x > 125 && m.x < 325 && m.y > 250 && m.y < 300) restartGame();
+                if (m.x > 125 && m.x < 325 && m.y > 330 && m.y < 380) window.close();
             }
 
-            if (const auto* keyPressed = event->getIf<Event::KeyPressed>()) {
-                // Rotate
-                if (keyPressed->code == Keyboard::Key::W) {
-                    currentPiece->rotate(x, y);
-                }
-                // Hard Drop
-                else if (keyPressed->code == Keyboard::Key::Space) {
-                    while (canMove(0, 1)) {
-                        y++;
+            if (!isGameOver) {
+                if (const auto* keyPressed = event->getIf<Event::KeyPressed>()) {
+                    if (keyPressed->code == Keyboard::Key::W) currentPiece->rotate(x, y);
+                    else if (keyPressed->code == Keyboard::Key::Space) {
+                        while (canMove(0, 1)) y++;
+                        timer = 10.0f; 
                     }
-                    timer = gameDelay + 10.0f; // Force lock immediately
                 }
             }
         }
 
         // --- INPUT (Continuous) ---
-        if (inputTimer > inputDelay) {
-            if (Keyboard::isKeyPressed(Keyboard::Key::A)) {
-                if (canMove(-1, 0)) x--;
-                inputTimer = 0;
-            } else if (Keyboard::isKeyPressed(Keyboard::Key::D)) {
-                if (canMove(1, 0)) x++;
-                inputTimer = 0;
-            } else if (Keyboard::isKeyPressed(Keyboard::Key::S)) {
-                if (canMove(0, 1)) y++;
-                inputTimer = 0;
-            }
-        }
-
-        // --- GRAVITY & LOGIC ---
-        if (timer > gameDelay) {
-            if (canMove(0, 1)) {
-                y++;
-            } else {
-                landSound.play();
-
-                block2Board();
-                removeLine();
-
-                delete currentPiece;
-                currentPiece = createRandomPiece();
-                x = 4; 
-                y = 0;
-
-                // Game Over Check
-                if (!canMove(0, 0)) {
-                    window.close();
+        if (!isGameOver) {
+            if (inputTimer > inputDelay) {
+                if (Keyboard::isKeyPressed(Keyboard::Key::A)) {
+                    if (canMove(-1, 0)) x--;
+                    inputTimer = 0;
+                } else if (Keyboard::isKeyPressed(Keyboard::Key::D)) {
+                    if (canMove(1, 0)) x++;
+                    inputTimer = 0;
+                } else if (Keyboard::isKeyPressed(Keyboard::Key::S)) {
+                    if (canMove(0, 1)) y++;
+                    inputTimer = 0;
                 }
             }
-            timer = 0;
+
+            // --- GRAVITY & LOGIC ---
+            if (timer > gameDelay) {
+                if (canMove(0, 1)) y++;
+                else {
+                    landSound.play();
+                    block2Board(); // Gọi hàm của bạn
+                    removeLine();
+                    delete currentPiece;
+                    currentPiece = createRandomPiece();
+                    x = 4; y = 0;
+                    if (!canMove(0, 0)) isGameOver = true;
+                }
+                timer = 0;
+            }
         }
 
         // --- RENDER ---
         window.clear(Color::Black);
 
         // Draw Board
-        for (int i = 0; i < H; i++) {
-            for (int j = 0; j < W; j++) {
-                if (board[i][j] != ' ') {
+        for (int i = 0; i < H; i++){
+            for (int j = 0; j < W; j++){
+                if (board[i][j] != ' '){
                     RectangleShape rect(Vector2f(TILE_SIZE - 1, TILE_SIZE - 1));
                     rect.setPosition(Vector2f(j * TILE_SIZE, i * TILE_SIZE));
                     rect.setFillColor(getColor(board[i][j]));
@@ -344,21 +325,50 @@ int main() {
                 }
             }
         }
-
+        
         // Draw Current Piece
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                if (currentPiece->shape[i][j] != ' ') {
-                    RectangleShape rect(Vector2f(TILE_SIZE - 1, TILE_SIZE - 1));
-                    rect.setPosition(Vector2f((x + j) * TILE_SIZE, (y + i) * TILE_SIZE));
-                    rect.setFillColor(getColor(currentPiece->shape[i][j]));
-                    window.draw(rect);
-                }
-            }
+        if (!isGameOver) {
+            for (int i = 0; i < 4; i++)
+                for (int j = 0; j < 4; j++)
+                    if (currentPiece->shape[i][j] != ' ') {
+                        RectangleShape rect(Vector2f(TILE_SIZE - 1, TILE_SIZE - 1));
+                        rect.setPosition(Vector2f((x + j) * TILE_SIZE, (y + i) * TILE_SIZE));
+                        rect.setFillColor(getColor(currentPiece->shape[i][j]));
+                        window.draw(rect);
+                    }
+        }
+
+        // Màn hình Game Over
+        if (isGameOver) {
+            RectangleShape overlay(Vector2f(W * TILE_SIZE, H * TILE_SIZE));
+            overlay.setFillColor(Color(0, 0, 0, 200));
+            window.draw(overlay);
+
+            Text t1(font, "GAME OVER", 45);
+            t1.setFillColor(Color::Red);
+            t1.setPosition(Vector2f(85, 150));
+            window.draw(t1);
+
+            // Nút Restart
+            RectangleShape b1(Vector2f(200, 50));
+            b1.setPosition(Vector2f(125, 250));
+            b1.setFillColor(Color(0, 0, 255));
+            window.draw(b1);
+            Text rT(font, "RESTART", 25);
+            rT.setPosition(Vector2f(175, 260));
+            window.draw(rT);
+
+            // Nút Exit
+            RectangleShape b2(Vector2f(200, 50));
+            b2.setPosition(Vector2f(125, 330));
+            b2.setFillColor(Color(255, 0, 0));
+            window.draw(b2);
+            Text eT(font, "EXIT", 25);
+            eT.setPosition(Vector2f(200, 340));
+            window.draw(eT);
         }
 
         window.display();
     }
-
     return 0;
 }
