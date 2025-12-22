@@ -1,4 +1,26 @@
+# IDE
 .vscode/
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build directories
+build/
+out/
+bin/
+Debug/
+Release/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+_deps/
+*.cmake
 
 # Prerequisites
 *.d
@@ -39,5 +61,16 @@
 *.out
 *.app
 
-# debug information files
+# Debug information files
 *.dwo
+
+# Backup files
+*~
+*.bak
+*.tmp
+*.swp
+
+# OS specific
+.DS_Store
+Thumbs.db
+desktop.ini
