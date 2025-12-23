@@ -502,14 +502,19 @@ int main() {
     auto [settingBtn, settingText] = createButton("SETTINGS", 230);
     auto [exitBtn, exitText]       = createButton("EXIT",     300);
 
-    auto isClicked = [&](RectangleShape& btn, Vector2i mousePos) {
-        FloatRect bounds = btn.getGlobalBounds();
-        return bounds.contains(Vector2f(static_cast<float>(mousePos.x), static_cast<float>(mousePos.y)));
+    auto isClicked = [&](RectangleShape& btn, Vector2f mousePos) {
+        return btn.getGlobalBounds().contains(mousePos);    
     };
 
     // Cursors for hover effect
     auto arrowCursor = sf::Cursor::createFromSystem(sf::Cursor::Type::Arrow);
     auto handCursor = sf::Cursor::createFromSystem(sf::Cursor::Type::Hand);
+
+    // View setup
+    float baseW = static_cast<float>(PLAY_W_PX + SIDEBAR_W);
+    float baseH = static_cast<float>(PLAY_H_PX);
+    View view(FloatRect({0.f, 0.f}, {baseW, baseH}));
+    window.setView(view);
 
     while (window.isOpen()) {
         float dt = clock.restart().asSeconds();
@@ -524,7 +529,9 @@ int main() {
             if (gameState == GameState::MENU) {
                 if (const auto* mouse = event->getIf<Event::MouseButtonPressed>()) {
                     if (mouse->button == Mouse::Button::Left) {
-                        Vector2i mousePos = Mouse::getPosition(window);
+                        Vector2i pixelPos = Mouse::getPosition(window);
+                        Vector2f mousePos = window.mapPixelToCoords(pixelPos);
+
                         if (isClicked(startBtn, mousePos)) {
                             resetGame();
                             gameState = GameState::PLAYING;
@@ -545,11 +552,35 @@ int main() {
                 window.close();
             }
 
+            // ===== RESIZE LOGIC =====
+            if (const auto* resized = event->getIf<Event::Resized>()) {
+                float windowRatio = static_cast<float>(resized->size.x) / static_cast<float>(resized->size.y);
+                float viewRatio = baseW / baseH;
+                float sizeX = 1;
+                float sizeY = 1;
+                float posX = 0;
+                float posY = 0;
+
+                if (windowRatio > viewRatio) {
+                    sizeX = viewRatio / windowRatio;
+                    posX = (1 - sizeX) / 2.f;
+                }
+                else {
+                    sizeY = windowRatio / viewRatio;
+                    posY = (1 - sizeY) / 2.f;
+                }
+
+                view.setViewport(FloatRect({posX, posY}, {sizeX, sizeY}));
+                window.setView(view);
+            }
+
             // ===== GAME OVER CLICK =====
             if (isGameOver && gameState == GameState::PLAYING) {
                 if (const auto* mouse = event->getIf<Event::MouseButtonPressed>()) {
                     if (mouse->button == Mouse::Button::Left) {
-                        Vector2i mousePos = Mouse::getPosition(window);
+                        Vector2i pixelPos = Mouse::getPosition(window);
+                        Vector2f mousePos = window.mapPixelToCoords(pixelPos);
+
                         const float fullW = PLAY_W_PX + SIDEBAR_W;
                         const float goBtnW = 200.f;
                         const float goBtnX = (fullW - goBtnW) / 2.f;
@@ -603,7 +634,8 @@ int main() {
             if (gameState == GameState::SETTINGS) {
                 if (const auto* mouse = event->getIf<Event::MouseButtonPressed>()) {
                     if (mouse->button == Mouse::Button::Left) {
-                        Vector2i mousePos = Mouse::getPosition(window);
+                        Vector2i pixelPos = Mouse::getPosition(window);
+                        Vector2f mousePos = window.mapPixelToCoords(pixelPos);
 
                         // Music row Y=130: Left arrow at 260, slider 285-485, right arrow at 490
                         if (mousePos.x >= 255 && mousePos.x <= 280 && mousePos.y >= 125 && mousePos.y <= 155) {
@@ -1045,7 +1077,8 @@ int main() {
 
         // --- CURSOR HOVER LOGIC ---
         {
-            Vector2i mp = Mouse::getPosition(window);
+            Vector2i pixelPos = Mouse::getPosition(window);
+            Vector2f mp = window.mapPixelToCoords(pixelPos);
             bool isHovering = false;
 
             if (gameState == GameState::MENU) {
