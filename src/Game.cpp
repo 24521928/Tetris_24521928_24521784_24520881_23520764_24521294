@@ -9,36 +9,31 @@
 #include "UI.h"
 #include <fstream>
 
-// --- GLOBAL GAME STATE ---
 char board[H][W] = {};
 int x = 4, y = 0;
 float gameDelay = 0.8f;
 float baseDelay = 0.8f;
 bool isGameOver = false;
 
-// --- SCORE & LEVEL ---
 int gScore = 0;
 int gLines = 0;
 int gLevel = 0;
 int currentLevel = 0;
 int highScore = 0;
 
-// --- COMBO SYSTEM ---
 int comboCount = 0;
 int lastClearLines = 0;
 
-// --- T-SPIN & BACK-TO-BACK SYSTEM ---
 bool lastMoveWasRotate = false;
 bool backToBackActive = false;
 int tSpinCount = 0;
 
-// --- STATISTICS ---
 float playTime = 0.f;
 int tetrisCount = 0;
 int totalPieces = 0;
-int pieceCount[7] = {0, 0, 0, 0, 0, 0, 0};  // I, O, T, S, Z, J, L
+int pieceCount[7] = {0, 0, 0, 0, 0, 0, 0};
 
-// Helper to get piece index from char
+/** Get index of tetromino piece type */
 int getPieceIndex(char c) {
     switch (c) {
         case 'I': return 0;
@@ -52,38 +47,35 @@ int getPieceIndex(char c) {
     }
 }
 
-// --- CURRENT PIECES ---
 Piece* currentPiece = nullptr;
 Piece* nextPiece = nullptr;
 Piece* nextQueue[4] = {nullptr, nullptr, nullptr, nullptr};
 Piece* holdPiece = nullptr;
 bool canHold = true;
 
-// --- DIFFICULTY ---
 Difficulty difficulty = Difficulty::NORMAL;
 
-// --- 7-BAG RANDOM SYSTEM ---
 int pieceBag[7] = {0, 1, 2, 3, 4, 5, 6};
-int bagIndex = 7; // Force refill on first call
+int bagIndex = 7;
 
-// --- DAS & ARR (Auto-Repeat System) ---
 float dasTimer = 0.f;
 float arrTimer = 0.f;
 bool leftHeld = false;
 bool rightHeld = false;
 bool downHeld = false;
+float DAS_DELAY = 0.133f;
+float ARR_DELAY = 0.0f;
 
-// --- LOCK DELAY & INFINITY ---
 float lockTimer = 0.f;
 int lockMoves = 0;
 bool onGround = false;
 
-// --- SETTINGS ---
 float musicVolume = 50.f;
 float sfxVolume = 50.f;
 float brightness = 255.f;
 bool ghostPieceEnabled = true;
 
+/** Get game speed delay for current difficulty */
 float getBaseDelayForDifficulty() {
     switch (difficulty) {
         case Difficulty::EASY:   return 1.0f;
@@ -93,6 +85,7 @@ float getBaseDelayForDifficulty() {
     }
 }
 
+/** Load high score from file */
 void loadHighScore() {
     std::ifstream file("highscore.dat");
     if (file.is_open()) {
@@ -101,6 +94,7 @@ void loadHighScore() {
     }
 }
 
+/** Process close */
 void saveHighScore() {
     if (gScore > highScore) {
         highScore = gScore;
@@ -112,6 +106,7 @@ void saveHighScore() {
     }
 }
 
+/** Process close */
 void loadSettings() {
     std::ifstream file("config.ini");
     if (file.is_open()) {
@@ -128,12 +123,17 @@ void loadSettings() {
             } else if (line.find("difficulty=") == 0) {
                 int diff = std::stoi(line.substr(11));
                 difficulty = static_cast<Difficulty>(diff);
+            } else if (line.find("dasDelay=") == 0) {
+                DAS_DELAY = std::stof(line.substr(9));
+            } else if (line.find("arrDelay=") == 0) {
+                ARR_DELAY = std::stof(line.substr(9));
             }
         }
         file.close();
     }
 }
 
+/** Process close */
 void saveSettings() {
     std::ofstream file("config.ini");
     if (file.is_open()) {
@@ -142,10 +142,13 @@ void saveSettings() {
         file << "brightness=" << brightness << "\n";
         file << "ghostPiece=" << (ghostPieceEnabled ? 1 : 0) << "\n";
         file << "difficulty=" << static_cast<int>(difficulty) << "\n";
+        file << "dasDelay=" << DAS_DELAY << "\n";
+        file << "arrDelay=" << ARR_DELAY << "\n";
         file.close();
     }
 }
 
+/** Process close */
 void initBoard() {
     for (int i = 0; i < H; i++) {
         for (int j = 0; j < W; j++) {
@@ -158,6 +161,7 @@ void initBoard() {
     }
 }
 
+/** Transfer current piece to the game board */
 void block2Board() {
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
@@ -168,6 +172,7 @@ void block2Board() {
     }
 }
 
+/** Check if piece can move in specified direction */
 bool canMove(int dx, int dy) {
     if (!currentPiece) return false;
     for (int i = 0; i < 4; i++) {
@@ -183,6 +188,7 @@ bool canMove(int dx, int dy) {
     return true;
 }
 
+/** Calculate ghost piece Y position */
 int getGhostY() {
     int ghostY = y;
     while (true) {
@@ -206,6 +212,7 @@ int getGhostY() {
     return ghostY;
 }
 
+/** Increase game speed based on level */
 void SpeedIncrement() {
     if (gameDelay > 0.1f) {
         gameDelay -= 0.08f;
@@ -215,32 +222,28 @@ void SpeedIncrement() {
 void applyLineClearScore(int cleared) {
     if (cleared <= 0) {
         comboCount = 0;
-        // Reset B2B if no difficult clear
+
         if (!isTSpin()) {
             backToBackActive = false;
         }
         return;
     }
-    
+
     gLines += cleared;
     lastClearLines = cleared;
-    
-    // Check for T-Spin
+
     bool tSpin = isTSpin();
     if (tSpin) tSpinCount++;
-    
-    // Check for Perfect Clear
+
     bool perfectClear = isPerfectClear();
-    
-    // Base score with combo multiplier
+
     float comboMultiplier = 1.0f + (comboCount * 0.5f);
-    
-    // Score based on lines cleared
+
     int baseScore = 0;
     std::string clearType = "";
-    
+
     if (tSpin) {
-        // T-Spin scoring
+
         switch (cleared) {
             case 1: baseScore = 800; clearType = "T-SPIN SINGLE"; break;
             case 2: baseScore = 1200; clearType = "T-SPIN DOUBLE"; break;
@@ -248,7 +251,7 @@ void applyLineClearScore(int cleared) {
             default: baseScore = 800;
         }
     } else {
-        // Normal scoring
+
         switch (cleared) {
             case 1: baseScore = 100; break;
             case 2: baseScore = 300; break;
@@ -257,30 +260,27 @@ void applyLineClearScore(int cleared) {
             default: baseScore = 100 * cleared;
         }
     }
-    
-    // Back-to-Back bonus (50% extra for Tetris or T-Spin after another)
+
     float b2bMultiplier = 1.0f;
     if ((cleared == 4 || tSpin) && backToBackActive) {
         b2bMultiplier = 1.5f;
         clearType += " B2B";
     }
-    
-    // Activate B2B for next difficult clear
+
     if (cleared == 4 || tSpin) {
         backToBackActive = true;
     } else {
         backToBackActive = false;
     }
-    
-    // Perfect Clear bonus
+
     if (perfectClear) {
         baseScore += 3000;
         clearType += " PERFECT!";
     }
-    
+
     gScore += static_cast<int>(baseScore * comboMultiplier * b2bMultiplier);
     comboCount++;
-    
+
     gLevel = gLines / 10;
     if (gLevel > currentLevel) {
         SpeedIncrement();
@@ -289,10 +289,12 @@ void applyLineClearScore(int cleared) {
     }
 }
 
+/** Process playLevelUp */
 int removeLine() {
     int cleared = 0;
+/** Remove completed lines and shift board down */
     int clearedLines[4] = {-1, -1, -1, -1};
-    
+
     for (int i = H - 2; i > 0; i--) {
         bool isFull = true;
         for (int j = 1; j < W - 1; j++) {
@@ -304,14 +306,14 @@ int removeLine() {
             }
             cleared++;
             Audio::playClear();
-            
-            // Add particles for line clear
+
             for (int j = 1; j < W - 1; j++) {
                 sf::Color color = getColor(board[i][j]);
-                UI::addParticles(STATS_W + j * TILE_SIZE + TILE_SIZE/2, 
+/** Process playClear */
+                UI::addParticles(STATS_W + j * TILE_SIZE + TILE_SIZE/2,
                                 i * TILE_SIZE + TILE_SIZE/2, color, 5);
             }
-            
+
             for (int k = i; k > 0; k--) {
                 for (int j = 1; j < W - 1; j++) {
                     board[k][j] = (k != 1) ? board[k - 1][j] : ' ';
@@ -320,15 +322,15 @@ int removeLine() {
             i++;
         }
     }
-    
-    // Start line clear animation if lines were cleared
+
     if (cleared > 0) {
         UI::startLineClearAnim(clearedLines, cleared);
     }
-    
+
     return cleared;
 }
 
+/** Reset all game variables for new game */
 void resetGame() {
     initBoard();
     delete currentPiece;
@@ -377,14 +379,15 @@ void resetGame() {
     tSpinCount = 0;
 }
 
+/** Swap current piece with held piece */
 void swapHold() {
     if (!canHold) return;
-    
+
     if (holdPiece == nullptr) {
         holdPiece = currentPiece;
         currentPiece = nextPiece;
         nextPiece = nextQueue[0];
-        // Shift queue and add new piece
+
         for (int i = 0; i < 3; i++) {
             nextQueue[i] = nextQueue[i + 1];
         }
@@ -394,12 +397,13 @@ void swapHold() {
         holdPiece = currentPiece;
         currentPiece = temp;
     }
-    
+
     x = 4;
     y = 0;
     canHold = false;
 }
 
+/** Reset lock delay timer for current piece */
 void resetLockDelay() {
     if (lockMoves < MAX_LOCK_MOVES) {
         lockTimer = 0.f;
@@ -407,11 +411,10 @@ void resetLockDelay() {
     }
 }
 
-// T-Spin detection: T piece, last move was rotate, at least 3 corners filled
+/** Process isTSpin */
 bool isTSpin() {
     if (!currentPiece || !lastMoveWasRotate) return false;
-    
-    // Check if it's T piece
+
     bool isTpiece = false;
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
@@ -423,13 +426,12 @@ bool isTSpin() {
         if (isTpiece) break;
     }
     if (!isTpiece) return false;
-    
-    // Find T piece center position in shape matrix
+
     int centerR = -1, centerC = -1;
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
             if (currentPiece->shape[i][j] == 'T') {
-                // Check if this is center (has 3 adjacent T blocks)
+
                 int adjacent = 0;
                 if (i > 0 && currentPiece->shape[i-1][j] == 'T') adjacent++;
                 if (i < 3 && currentPiece->shape[i+1][j] == 'T') adjacent++;
@@ -444,24 +446,22 @@ bool isTSpin() {
         }
         if (centerR != -1) break;
     }
-    
+
     if (centerR == -1) return false;
-    
-    // Check 4 corners around center in board space
+
     int boardY = y + centerR;
     int boardX = x + centerC;
-    
+
     int filledCorners = 0;
-    // Top-left, Top-right, Bottom-left, Bottom-right
+
     if (boardY > 0 && boardX > 0 && board[boardY-1][boardX-1] != ' ') filledCorners++;
     if (boardY > 0 && boardX < W-1 && board[boardY-1][boardX+1] != ' ') filledCorners++;
     if (boardY < H-1 && boardX > 0 && board[boardY+1][boardX-1] != ' ') filledCorners++;
     if (boardY < H-1 && boardX < W-1 && board[boardY+1][boardX+1] != ' ') filledCorners++;
-    
+
     return filledCorners >= 3;
 }
 
-// Perfect Clear: entire board is empty (except borders)
 bool isPerfectClear() {
     for (int i = 1; i < H - 1; i++) {
         for (int j = 1; j < W - 1; j++) {

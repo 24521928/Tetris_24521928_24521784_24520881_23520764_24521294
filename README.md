@@ -25,14 +25,20 @@ A modern Tetris game with advanced mechanics built with SFML 3 and C++17.
 - 🖥️ **Fullscreen support** (F11 toggle with aspect ratio preservation)
 
 ### UI & UX
-- 📋 **5-Piece Preview** - See upcoming pieces
+- 📋 **2x2 Grid: Hold (top-left) + NEXT queue (J-shaped)** - 3-piece preview
 - 🔲 **Hold Piece** - Store piece for later (C key)
 - ⏸️ Pause menu with settings access
-- 📊 Live statistics (Score, Level, Lines, B2B, Combo)
+- 📊 Live statistics (Score, Level, Lines, Tetris count, T-Spin count, Max Combo)
 - 🎯 3 Difficulty levels (Easy/Normal/Hard)
 - 💾 Settings persistence (config.ini)
+  - Music Volume (0-100%)
+  - SFX Volume (0-100%)
+  - Brightness (20-100%)
+  - **DAS** (100-200ms) - Delayed Auto Shift
+  - **ARR** (0-50ms) - Auto Repeat Rate
+  - Ghost Piece toggle
 - 🏆 High score tracking
-- 📖 **How To Play screen** - Complete tutorial
+- 📖 **How To Play screen** - Complete tutorial with game mechanics
 
 ## 🎮 Controls
 | Key | Action |
@@ -120,9 +126,14 @@ g++ -std=c++17 main.cpp src/*.cpp -o Tetris.exe -Llib -lsfml-graphics -lsfml-win
 - **Language**: C++17
 - **Graphics**: SFML 3.0
 - **Antialiasing**: Level 8 for smooth rendering
-- **Window**: 780×600 with fullscreen support
+- **Window**: 800×800 with fullscreen support
 - **Architecture**: Modular design with separate Game, UI, Audio systems
-- **Settings**: Persistent config.ini (volume, brightness, ghost toggle)
+- **Settings**: Persistent config.ini
+  - Volume controls (Music, SFX)
+  - Display brightness (51-255 internal, 20-100% display)
+  - Input timing (DAS: 100-200ms, ARR: 0-50ms)
+  - Visual toggles (Ghost Piece)
+- **Code Style**: Uniform commenting for all source files with GPL v3 headers
 
 ## 📦 Distribution
 

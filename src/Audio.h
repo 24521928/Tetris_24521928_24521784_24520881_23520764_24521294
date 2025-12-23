@@ -8,34 +8,35 @@
 #include <SFML/Audio.hpp>
 
 namespace Audio {
-    // Initialize audio system
     bool init();
-    
-    // Cleanup
+
     void cleanup();
-    
-    // Play sounds - Original
+
     void playClear();
     void playLand();
+
+
+// Game functions
     void playGameOver();
     void playSettingClick();
-    
-    // Play sounds - New SFX
-    void playStartGame();      // Nhấn START
-    void playLevelUp();        // Lên level
-    void playOpenSettings();   // Mở Settings
-    void playCloseSettings();  // Đóng Settings
-    void playToggleOn();       // Bật Ghost Piece
-    void playToggleOff();      // Tắt Ghost Piece
-    
-    // Music control
+
+    void playStartGame();
+    void playLevelUp();
+    void playOpenSettings();
+    void playCloseSettings();
+    void playToggleOn();
+    void playToggleOff();
+
+
+
+// Audio functions
     void playMusic();
     void stopMusic();
-    
-    // Volume control
+    void playTheme();
+    void stopTheme();
+
     void setMusicVolume(float volume);
     void setSfxVolume(float volume);
-    
-    // Access to music for volume changes
+
     sf::Music& getMusic();
 }

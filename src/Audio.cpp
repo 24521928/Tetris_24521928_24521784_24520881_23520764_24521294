@@ -8,45 +8,42 @@
 #include "Game.h"
 
 namespace Audio {
-    // Original buffers
+
     static sf::SoundBuffer clearBuffer;
     static sf::SoundBuffer landBuffer;
     static sf::SoundBuffer gameOverBuffer;
     static sf::SoundBuffer settingClickBuffer;
-    
-    // New SFX buffers
+
     static sf::SoundBuffer startGameBuffer;
     static sf::SoundBuffer levelUpBuffer;
     static sf::SoundBuffer openSettingsBuffer;
     static sf::SoundBuffer closeSettingsBuffer;
     static sf::SoundBuffer toggleOnBuffer;
     static sf::SoundBuffer toggleOffBuffer;
-    
-    // Original sounds
+
     static sf::Sound* clearSound = nullptr;
     static sf::Sound* landSound = nullptr;
     static sf::Sound* gameOverSound = nullptr;
     static sf::Sound* settingClickSound = nullptr;
-    
-    // New sounds
+
     static sf::Sound* startGameSound = nullptr;
     static sf::Sound* levelUpSound = nullptr;
     static sf::Sound* openSettingsSound = nullptr;
     static sf::Sound* closeSettingsSound = nullptr;
     static sf::Sound* toggleOnSound = nullptr;
     static sf::Sound* toggleOffSound = nullptr;
-    
+
     static sf::Music bgMusic;
 
+/** Initialize  */
     bool init() {
-        // Load original sounds
+
         if (!bgMusic.openFromFile("assets/audio/loop_theme.ogg")) return false;
         if (!clearBuffer.loadFromFile("assets/audio/line_clear.ogg")) return false;
         if (!landBuffer.loadFromFile("assets/audio/bumper_end.ogg")) return false;
         if (!gameOverBuffer.loadFromFile("assets/audio/game_over.ogg")) return false;
         if (!settingClickBuffer.loadFromFile("assets/audio/insetting_click.ogg")) return false;
-        
-        // Load new SFX (optional - game works without these)
+
         (void)startGameBuffer.loadFromFile("assets/audio/start_game.ogg");
         (void)levelUpBuffer.loadFromFile("assets/audio/level_up.ogg");
         (void)openSettingsBuffer.loadFromFile("assets/audio/open_settings.ogg");
@@ -54,13 +51,11 @@ namespace Audio {
         (void)toggleOnBuffer.loadFromFile("assets/audio/toggle_on.ogg");
         (void)toggleOffBuffer.loadFromFile("assets/audio/toggle_off.ogg");
 
-        // Create original sounds
         clearSound = new sf::Sound(clearBuffer);
         landSound = new sf::Sound(landBuffer);
         gameOverSound = new sf::Sound(gameOverBuffer);
         settingClickSound = new sf::Sound(settingClickBuffer);
-        
-        // Create new sounds
+
         startGameSound = new sf::Sound(startGameBuffer);
         levelUpSound = new sf::Sound(levelUpBuffer);
         openSettingsSound = new sf::Sound(openSettingsBuffer);
@@ -70,10 +65,11 @@ namespace Audio {
 
         bgMusic.setLooping(true);
         bgMusic.setVolume(musicVolume);
-        
+
         return true;
     }
 
+/** Set volume level for audio */
     void cleanup() {
         delete clearSound;
         delete landSound;
@@ -87,58 +83,82 @@ namespace Audio {
         delete toggleOffSound;
     }
 
+/** Process playClear */
     void playClear() {
         if (clearSound) clearSound->play();
     }
 
+/** Process playClear */
     void playLand() {
         if (landSound) landSound->play();
     }
 
+/** Process playLand */
     void playGameOver() {
         if (gameOverSound) gameOverSound->play();
     }
 
+/** Process playGameOver */
     void playSettingClick() {
         if (settingClickSound) settingClickSound->play();
     }
-    
+
+/** Process playSettingClick */
     void playStartGame() {
         if (startGameSound) startGameSound->play();
     }
-    
+
+/** Process playStartGame */
     void playLevelUp() {
         if (levelUpSound) levelUpSound->play();
     }
-    
+
+/** Process playLevelUp */
     void playOpenSettings() {
         if (openSettingsSound) openSettingsSound->play();
     }
-    
+
+/** Process playOpenSettings */
     void playCloseSettings() {
         if (closeSettingsSound) closeSettingsSound->play();
     }
-    
+
+/** Process playCloseSettings */
     void playToggleOn() {
         if (toggleOnSound) toggleOnSound->play();
     }
-    
+
+/** Process playToggleOn */
     void playToggleOff() {
         if (toggleOffSound) toggleOffSound->play();
     }
 
+/** Process playToggleOff */
     void playMusic() {
         bgMusic.play();
     }
 
+/** Play background music */
     void stopMusic() {
         bgMusic.stop();
     }
 
+/** Stop background music */
+    void playTheme() {
+        playMusic();
+    }
+
+/** Process playTheme */
+    void stopTheme() {
+        stopMusic();
+    }
+
+/** Process stopTheme */
     void setMusicVolume(float volume) {
         bgMusic.setVolume(volume);
     }
 
+/** Process setMusicVolume */
     void setSfxVolume(float volume) {
         if (clearSound) clearSound->setVolume(volume);
         if (landSound) landSound->setVolume(volume);

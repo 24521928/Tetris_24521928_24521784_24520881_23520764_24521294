@@ -9,24 +9,24 @@
 #include <cstdlib>
 #include <algorithm>
 
-// Shuffle the 7-piece bag using Fisher-Yates algorithm
+/** Process shuffleBag */
 void shuffleBag() {
     for (int i = 6; i > 0; i--) {
         int j = rand() % (i + 1);
+/** Process shuffleBag */
         std::swap(pieceBag[i], pieceBag[j]);
     }
     bagIndex = 0;
 }
 
-// 7-Bag Random: ensures fair distribution of all 7 pieces
 Piece* createRandomPiece() {
-    // Refill bag when empty
+
     if (bagIndex >= 7) {
         shuffleBag();
     }
-    
+
     int pieceType = pieceBag[bagIndex++];
-    
+
     switch (pieceType) {
         case 0: return new IPiece();
         case 1: return new OPiece();
