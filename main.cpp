@@ -15,6 +15,7 @@ const int W = 15;
 const int SIDEBAR_W = 6 * TILE_SIZE;        
 const int PLAY_W_PX = W * TILE_SIZE;
 const int PLAY_H_PX = H * TILE_SIZE;
+
 // --- GLOBAL VARIABLES ---
 char board[H][W] = {};
 int x = 4, y = 0;
@@ -29,6 +30,15 @@ sf::SoundBuffer landBuffer;
 sf::Sound landSound(landBuffer);
 
 sf::Music bgMusic;
+
+// --- game state ---
+
+enum class GameState {
+    MENU,
+    PLAYING,
+    SETTINGS,
+};
+GameState gameState = GameState::MENU;
 
 // --- PIECE CLASSES ---
 class Piece {
@@ -373,6 +383,19 @@ int removeLine() {
     return cleared;
 }
 
+void resetGame() {
+    initBoard();
+
+    delete currentPiece;
+    currentPiece = createRandomPiece();
+
+    x = 4;
+    y = 0;
+    gameDelay = 0.5f;
+}
+
+
+
 // --- MAIN FUNCTION ---
 int main() {
     RenderWindow window(VideoMode(Vector2u(PLAY_W_PX + SIDEBAR_W, PLAY_H_PX)), "SS008 - Tetris");
@@ -402,6 +425,40 @@ int main() {
     float timer = 0, inputTimer = 0;
     const float inputDelay = 0.1f;
 
+    // ===== TITLE =====
+    Text title(font);
+    title.setString("SS008 - TETRIS");
+    title.setCharacterSize(48);
+    title.setFillColor(Color::Cyan);
+    title.setPosition(sf::Vector2f{70.f, 60.f});
+
+    // ===== BUTTON FACTORY =====
+    auto createButton = [&](const string& label, float x, float y) {
+        RectangleShape btn(Vector2f(200, 50));
+        btn.setPosition(sf::Vector2f{static_cast<float>(x),
+                             static_cast<float>(y)});
+        btn.setFillColor(Color(50, 50, 50));
+
+        sf::Text txt(font);
+        txt.setString(label);
+        txt.setCharacterSize(24);
+        txt.setFillColor(Color::White);
+        txt.setPosition(sf::Vector2f{x + 60.f, y + 10.f});
+
+
+        return pair<RectangleShape, Text>(btn, txt);
+    };
+
+    auto [startBtn, startText]     = createButton("START",    120, 160);
+    auto [settingBtn, settingText] = createButton("SETTINGS", 120, 230);
+    auto [exitBtn, exitText]       = createButton("EXIT",     120, 300);
+
+    // ===== CLICK CHECK =====
+    auto isClicked = [&](RectangleShape& btn, Vector2i mousePos) {
+        return btn.getGlobalBounds().contains((Vector2f)mousePos);
+    };
+
+
     while (window.isOpen()) {
         float time = clock.getElapsedTime().asSeconds();
         clock.restart();
@@ -412,7 +469,33 @@ int main() {
 
         // --- EVENTS ---
         while (const auto event = window.pollEvent()) {
-            if (event->is<Event::Closed>()) window.close();
+            // ===== MENU CLICK =====
+            if (gameState == GameState::MENU) {
+                if (const auto* mouse = event->getIf<Event::MouseButtonPressed>()) {
+                    if (mouse->button == Mouse::Button::Left) {
+                        Vector2i mousePos = Mouse::getPosition(window);
+
+                        // START
+                        if (isClicked(startBtn, mousePos)) {
+                            gameState = GameState::PLAYING;
+
+                            initBoard();
+                            delete currentPiece;
+                            currentPiece = createRandomPiece();
+                            x = 4;
+                            y = 0;
+                            gameDelay = 0.5f;
+                        }
+                        
+                        // EXIT
+                        if (isClicked(exitBtn, mousePos)) {
+                            window.close();
+                        }
+                    }
+                }
+            }
+            if (event->is<Event::Closed>()) 
+                window.close();
 
             // Logic Click chuột khi Game Over
             if (isGameOver && event->is<Event::MouseButtonPressed>()) {
@@ -420,13 +503,35 @@ int main() {
                 if (m.x > 125 && m.x < 325 && m.y > 250 && m.y < 300) restartGame();
                 if (m.x > 125 && m.x < 325 && m.y > 330 && m.y < 380) window.close();
             }
+            
+            
+            // ===== ROTATE & HARD DROP (While playing) & Enter to return menu =====
+            if (gameState == GameState::PLAYING) {
+                if (!isGameOver) {
+                    // ===== INPUT =====
+                    if (const auto* keyPressed = event->getIf<Event::KeyPressed>()) {
+                        if (keyPressed->code == Keyboard::Key::W) {
+                            currentPiece->rotate(x, y);
+                        }
+                        else if (keyPressed->code == Keyboard::Key::Space) {
+                            while (canMove(0, 1)) y++;
+                            timer = gameDelay + 10.0f;
+                        }
+                        else if (keyPressed->code == Keyboard::Key::Enter) {
+                            gameState = GameState::MENU;
+                        }
 
-            if (!isGameOver) {
+                    }
+                }
+            }
+            else if (gameState == GameState::MENU) {
                 if (const auto* keyPressed = event->getIf<Event::KeyPressed>()) {
-                    if (keyPressed->code == Keyboard::Key::W) currentPiece->rotate(x, y);
-                    else if (keyPressed->code == Keyboard::Key::Space) {
-                        while (canMove(0, 1)) y++;
-                        timer = gameDelay + 10.0f; // force lock
+                    if (Keyboard::isKeyPressed(Keyboard::Key::Enter)) {
+                        resetGame();
+                        gameState = GameState::PLAYING;
+                    }
+                    if (Keyboard::isKeyPressed(Keyboard::Key::Escape)) {
+                        window.close();
                     }
                 }
             }
@@ -464,36 +569,51 @@ int main() {
                 timer = 0;
             }
         }
+        
 
         // --- RENDER (ONLY ONCE) ---
         window.clear(Color::Black);
+        // ===== MENU =====
+        if (gameState == GameState::MENU) {
+            window.draw(title);
 
-        // Draw Board
-        for (int i = 0; i < H; i++) {
-            for (int j = 0; j < W; j++) {
-                if (board[i][j] != ' ') {
-                    RectangleShape rect(Vector2f((float)TILE_SIZE - 1, (float)TILE_SIZE - 1));
-                    rect.setPosition(Vector2f((float)j * TILE_SIZE, (float)i * TILE_SIZE));
-                    rect.setFillColor(getColor(board[i][j]));
-                    window.draw(rect);
-                }
-            }
+            window.draw(startBtn);
+            window.draw(startText);
+
+            window.draw(settingBtn);
+            window.draw(settingText);
+
+            window.draw(exitBtn);
+            window.draw(exitText);
         }
-        
-        // Draw Current Piece
-        if (!isGameOver) 
-        {
-            for (int i = 0; i < 4; i++) 
-                for (int j = 0; j < 4; j++)
-                    if (currentPiece->shape[i][j] != ' ') 
-                    {
+        // ===== GAME =====
+        if (gameState == GameState::PLAYING) {
+            // Draw Board
+            for (int i = 0; i < H; i++) {
+                for (int j = 0; j < W; j++) {
+                    if (board[i][j] != ' ') {
                         RectangleShape rect(Vector2f((float)TILE_SIZE - 1, (float)TILE_SIZE - 1));
-                        rect.setPosition(Vector2f((float)(x + j) * TILE_SIZE, (float)(y + i) * TILE_SIZE));
-                        rect.setFillColor(getColor(currentPiece->shape[i][j]));
+                        rect.setPosition(Vector2f((float)j * TILE_SIZE, (float)i * TILE_SIZE));
+                        rect.setFillColor(getColor(board[i][j]));
                         window.draw(rect);
                     }
-        }
+                }
+            }
 
+            // Draw Current Piece
+            if (!isGameOver) 
+            {
+                for (int i = 0; i < 4; i++) 
+                    for (int j = 0; j < 4; j++)
+                        if (currentPiece->shape[i][j] != ' ') 
+                        {
+                            RectangleShape rect(Vector2f((float)TILE_SIZE - 1, (float)TILE_SIZE - 1));
+                            rect.setPosition(Vector2f((float)(x + j) * TILE_SIZE, (float)(y + i) * TILE_SIZE));
+                            rect.setFillColor(getColor(currentPiece->shape[i][j]));
+                            window.draw(rect);
+                        }
+            }
+        }
         // Màn hình Game Over
         if (isGameOver) {
             RectangleShape overlay(Vector2f(W * TILE_SIZE, H * TILE_SIZE));
