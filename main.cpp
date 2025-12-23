@@ -194,6 +194,10 @@ int main() {
                         }
                     }
                 }
+                // --- HOW TO PLAY CLICKS ---
+                else if (state == GameState::HOWTOPLAY) {
+                    UI::handleHowToPlayClick(mousePos, state);
+                }
             }
 
             // --- PLAYING INPUT ---
@@ -471,6 +475,9 @@ int main() {
         else if (state == GameState::SETTINGS) {
             UI::drawSettingsScreen(window, font);
         }
+        else if (state == GameState::HOWTOPLAY) {
+            UI::drawHowToPlay(window, font);
+        }
 
         // Draw brightness overlay
         UI::drawBrightnessOverlay(window);
@@ -492,10 +499,20 @@ int main() {
                     onButton = true;
                 }
             }
-            // Main buttons
+            // Main buttons (START, SETTINGS, HOW TO PLAY, EXIT)
             if ((mousePos.x >= btnX && mousePos.x <= btnX + btnW && mousePos.y >= 280 && mousePos.y <= 325) ||
                 (mousePos.x >= btnX && mousePos.x <= btnX + btnW && mousePos.y >= 340 && mousePos.y <= 385) ||
-                (mousePos.x >= btnX && mousePos.x <= btnX + btnW && mousePos.y >= 400 && mousePos.y <= 445)) {
+                (mousePos.x >= btnX && mousePos.x <= btnX + btnW && mousePos.y >= 400 && mousePos.y <= 445) ||
+                (mousePos.x >= btnX && mousePos.x <= btnX + btnW && mousePos.y >= 460 && mousePos.y <= 505)) {
+                onButton = true;
+            }
+        }
+        else if (state == GameState::HOWTOPLAY) {
+            const float btnW = 150.f;
+            const float btnX = (fullW - btnW) / 2.f;
+            const float btnY = WINDOW_H - 60.f;
+            if (mousePos.x >= btnX && mousePos.x <= btnX + btnW &&
+                mousePos.y >= btnY && mousePos.y <= btnY + 40.f) {
                 onButton = true;
             }
         }

@@ -53,6 +53,10 @@ namespace UI {
     // Game Over screen
     void drawGameOverScreen(sf::RenderWindow& window, const sf::Font& font);
     
+    // How to Play screen
+    void drawHowToPlay(sf::RenderWindow& window, const sf::Font& font);
+    void handleHowToPlayClick(sf::Vector2i mousePos, GameState& state);
+    
     // Brightness overlay
     void drawBrightnessOverlay(sf::RenderWindow& window);
     

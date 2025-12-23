@@ -17,6 +17,7 @@ enum class GameState {
     PLAYING,
     PAUSED,
     SETTINGS,
+    HOWTOPLAY,
 };
 
 // --- DIFFICULTY ---

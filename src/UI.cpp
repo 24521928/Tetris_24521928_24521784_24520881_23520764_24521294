@@ -747,7 +747,7 @@ void drawMenu(sf::RenderWindow& window, const sf::Font& font) {
     window.draw(diffLabel);
     
     const char* diffNames[] = {"EASY", "NORMAL", "HARD"};
-    Color diffColors[] = {Color::Green, Color::Yellow, Color::Red};
+    Color diffColors[] = {Color(0, 150, 0), Color(180, 140, 0), Color(180, 0, 0)};  // Darker colors
     float diffBtnW = 80.f;
     float diffStartX = (fullW - 3 * diffBtnW - 20.f) / 2.f;
     
@@ -789,29 +789,40 @@ void drawMenu(sf::RenderWindow& window, const sf::Font& font) {
     settingText.setPosition({btnX + (btnW - settingTxtW) / 2.f, 348.f});
     window.draw(settingText);
     
+    // HOW TO PLAY button
+    RectangleShape howToBtn({btnW, btnH});
+    howToBtn.setPosition({btnX, 400.f});
+    howToBtn.setFillColor(Color(0, 100, 180));
+    window.draw(howToBtn);
+    Text howToText(font, "HOW TO PLAY", 24);
+    howToText.setFillColor(Color::White);
+    float howToTxtW = howToText.getLocalBounds().size.x;
+    howToText.setPosition({btnX + (btnW - howToTxtW) / 2.f, 408.f});
+    window.draw(howToText);
+    
     // EXIT button
     RectangleShape exitBtn({btnW, btnH});
-    exitBtn.setPosition({btnX, 400.f});
+    exitBtn.setPosition({btnX, 460.f});
     exitBtn.setFillColor(Color(200, 0, 0));
     window.draw(exitBtn);
     Text exitText(font, "EXIT", 24);
     exitText.setFillColor(Color::White);
     float exitTxtW = exitText.getLocalBounds().size.x;
-    exitText.setPosition({btnX + (btnW - exitTxtW) / 2.f, 408.f});
+    exitText.setPosition({btnX + (btnW - exitTxtW) / 2.f, 468.f});
     window.draw(exitText);
     
     // High Score
     Text hsText(font, "HIGH SCORE: " + std::to_string(highScore), 18);
     hsText.setFillColor(Color::Yellow);
     float hsW = hsText.getLocalBounds().size.x;
-    hsText.setPosition({(fullW - hsW) / 2.f, 480.f});
+    hsText.setPosition({(fullW - hsW) / 2.f, 530.f});
     window.draw(hsText);
     
     // Controls hint
-    Text controlsText(font, "Controls: Arrows, Space, C=Hold, P=Pause", 12);
+    Text controlsText(font, "Press F11 for Fullscreen", 12);
     controlsText.setFillColor(Color(150, 150, 150));
     float ctrlW = controlsText.getLocalBounds().size.x;
-    controlsText.setPosition({(fullW - ctrlW) / 2.f, 520.f});
+    controlsText.setPosition({(fullW - ctrlW) / 2.f, 560.f});
     window.draw(controlsText);
 }
 
@@ -848,9 +859,16 @@ void handleMenuClick(sf::Vector2i mousePos, GameState& state, GameState& previou
         state = GameState::SETTINGS;
     }
     
-    // EXIT
+    // HOW TO PLAY
     if (mousePos.x >= btnX && mousePos.x <= btnX + btnW &&
         mousePos.y >= 400 && mousePos.y <= 445) {
+        Audio::playOpenSettings();
+        state = GameState::HOWTOPLAY;
+    }
+    
+    // EXIT
+    if (mousePos.x >= btnX && mousePos.x <= btnX + btnW &&
+        mousePos.y >= 460 && mousePos.y <= 505) {
         shouldClose = true;
     }
 }
@@ -1022,6 +1040,140 @@ void drawSoftDropTrail(sf::RenderWindow& window, const Piece* piece, int px, int
                 }
             }
         }
+    }
+}
+
+void drawHowToPlay(sf::RenderWindow& window, const sf::Font& font) {
+    const float fullW = WINDOW_W;
+    
+    // Background
+    RectangleShape bg(Vector2f(fullW, WINDOW_H));
+    bg.setFillColor(Color(20, 20, 30));
+    window.draw(bg);
+    
+    // Title
+    Text title(font, "HOW TO PLAY", 36);
+    title.setFillColor(Color::Cyan);
+    title.setStyle(Text::Bold);
+    float titleW = title.getLocalBounds().size.x;
+    title.setPosition({(fullW - titleW) / 2.f, 20.f});
+    window.draw(title);
+    
+    // Content - Two columns
+    float leftCol = 30.f;
+    float rightCol = fullW / 2.f + 10.f;
+    float y = 75.f;
+    float lineH = 22.f;
+    
+    auto drawSection = [&](float x, float& yPos, const std::string& header, const std::vector<std::string>& lines) {
+        Text headerText(font, header, 16);
+        headerText.setFillColor(Color::Yellow);
+        headerText.setStyle(Text::Bold);
+        headerText.setPosition({x, yPos});
+        window.draw(headerText);
+        yPos += lineH;
+        
+        for (const auto& line : lines) {
+            Text lineText(font, line, 13);
+            lineText.setFillColor(Color::White);
+            lineText.setPosition({x + 10.f, yPos});
+            window.draw(lineText);
+            yPos += lineH - 4.f;
+        }
+        yPos += 8.f;
+    };
+    
+    // Left column - Controls
+    float leftY = y;
+    drawSection(leftCol, leftY, "CONTROLS", {
+        "Left/Right Arrow - Move piece",
+        "Down Arrow - Soft drop",
+        "Up Arrow - Rotate clockwise",
+        "Space - Hard drop (instant)",
+        "C - Hold piece",
+        "P or ESC - Pause game",
+        "F11 - Toggle fullscreen"
+    });
+    
+    drawSection(leftCol, leftY, "SCORING", {
+        "Single line: 100 x Level",
+        "Double: 300 x Level",
+        "Triple: 500 x Level",
+        "Tetris (4 lines): 800 x Level",
+        "Combo bonus for chain clears"
+    });
+    
+    drawSection(leftCol, leftY, "7-BAG SYSTEM", {
+        "All 7 pieces appear once",
+        "Then shuffle and repeat",
+        "Guarantees fair distribution"
+    });
+    
+    // Right column - Advanced mechanics
+    float rightY = y;
+    drawSection(rightCol, rightY, "T-SPIN", {
+        "Rotate T piece into tight slot",
+        "3 corners must be filled",
+        "T-Spin Single: 800 x Level",
+        "T-Spin Double: 1200 x Level",
+        "T-Spin Triple: 1600 x Level"
+    });
+    
+    drawSection(rightCol, rightY, "BACK-TO-BACK (B2B)", {
+        "Consecutive Tetris or T-Spin",
+        "1.5x score multiplier",
+        "Chain breaks on non-special clear"
+    });
+    
+    drawSection(rightCol, rightY, "PERFECT CLEAR", {
+        "Clear ALL blocks on board",
+        "+3000 bonus points",
+        "Very rare and difficult!"
+    });
+    
+    drawSection(rightCol, rightY, "LOCK DELAY", {
+        "500ms before piece locks",
+        "Move/rotate to reset timer",
+        "Max 15 resets per piece"
+    });
+    
+    drawSection(rightCol, rightY, "GHOST PIECE", {
+        "Shows where piece will land",
+        "Helps plan your drops"
+    });
+    
+    // Back button
+    const float btnW = 150.f;
+    const float btnH = 40.f;
+    const float btnX = (fullW - btnW) / 2.f;
+    const float btnY = WINDOW_H - 60.f;
+    
+    RectangleShape backBtn({btnW, btnH});
+    backBtn.setPosition({btnX, btnY});
+    backBtn.setFillColor(Color(100, 100, 100));
+    backBtn.setOutlineThickness(2.f);
+    backBtn.setOutlineColor(Color::White);
+    window.draw(backBtn);
+    
+    Text backText(font, "BACK", 24);
+    backText.setFillColor(Color::White);
+    float backTxtW = backText.getLocalBounds().size.x;
+    backText.setPosition({btnX + (btnW - backTxtW) / 2.f, btnY + 6.f});
+    window.draw(backText);
+}
+
+void handleHowToPlayClick(sf::Vector2i mousePos, GameState& state) {
+    const float fullW = WINDOW_W;
+    const float btnW = 150.f;
+    const float btnH = 40.f;
+    const float btnX = (fullW - btnW) / 2.f;
+    const float btnY = WINDOW_H - 60.f;
+    
+    // Back button
+    if (mousePos.x >= btnX && mousePos.x <= btnX + btnW &&
+        mousePos.y >= btnY && mousePos.y <= btnY + btnH) {
+        Audio::playCloseSettings();
+        state = GameState::MENU;
     }
 }
 
