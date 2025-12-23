@@ -1,3 +1,9 @@
+/*
+ * Tetris Game - Core game logic
+ * Copyright (C) 2025 Tetris Game Contributors
+ * Licensed under GPL v3 - see LICENSE file
+ */
+
 #pragma once
 #include "Config.h"
 #include "Piece.h"

@@ -1,3 +1,9 @@
+/*
+ * Tetris Game - Configuration constants
+ * Copyright (C) 2025 Tetris Game Contributors
+ * Licensed under GPL v3 - see LICENSE file
+ */
+
 #pragma once
 
 // --- GAME CONFIGURATION ---

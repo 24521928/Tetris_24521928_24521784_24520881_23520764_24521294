@@ -1,3 +1,9 @@
+/*
+ * Tetris Game - UI implementation
+ * Copyright (C) 2025 Tetris Game Contributors
+ * Licensed under GPL v3 - see LICENSE file
+ */
+
 #include "UI.h"
 #include "Game.h"
 #include "Audio.h"

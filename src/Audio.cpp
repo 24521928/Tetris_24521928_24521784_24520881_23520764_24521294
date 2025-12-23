@@ -1,3 +1,9 @@
+/*
+ * Tetris Game - Audio implementation
+ * Copyright (C) 2025 Tetris Game Contributors
+ * Licensed under GPL v3 - see LICENSE file
+ */
+
 #include "Audio.h"
 #include "Game.h"
 

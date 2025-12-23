@@ -1,3 +1,9 @@
+/*
+ * Tetris Game - Piece system with 7-bag randomizer
+ * Copyright (C) 2025 Tetris Game Contributors
+ * Licensed under GPL v3 - see LICENSE file
+ */
+
 #pragma once
 #include <SFML/Graphics.hpp>
 #include "Config.h"
