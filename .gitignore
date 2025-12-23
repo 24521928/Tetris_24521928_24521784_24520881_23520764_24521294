@@ -3,8 +3,6 @@
 .vs/
 *.suo
 *.user
-*.userosscache
-*.sln.docstates
 
 # Build directories
 build/
@@ -13,21 +11,7 @@ bin/
 Debug/
 Release/
 
-# CMake
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-install_manifest.txt
-CTestTestfile.cmake
-_deps/
-*.cmake
-
-# Prerequisites
-*.d
-
 # Compiled Object files
-*.slo
-*.lo
 *.o
 *.obj
 
@@ -35,34 +19,19 @@ _deps/
 *.gch
 *.pch
 
-# Linker files
-*.ilk
-
 # Debugger Files
 *.pdb
+*.ilk
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
+# Dynamic libraries
 *.dll
 
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
+# Static libraries
 *.a
 *.lib
 
 # Executables
 *.exe
-*.out
-*.app
-
-# Debug information files
-*.dwo
 
 # Backup files
 *~
@@ -74,3 +43,7 @@ _deps/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Runtime files
+config.ini
+highscore.dat
