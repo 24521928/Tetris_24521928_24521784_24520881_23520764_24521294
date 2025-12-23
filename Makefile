@@ -1,7 +1,8 @@
 # Tetris Makefile for MinGW/MSYS2
+# Self-contained build - no system SFML installation required!
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -g
-LDFLAGS = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
+LDFLAGS = -Llib -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
 
 # Source files
 SOURCES = main.cpp src/Piece.cpp src/Game.cpp src/Audio.cpp src/UI.cpp
@@ -15,6 +16,7 @@ $(TARGET): $(SOURCES)
 
 # Release build (optimized)
 release: CXXFLAGS = -std=c++17 -O2 -DNDEBUG
+release: LDFLAGS = -Llib -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
 release: $(TARGET)
 
 # Clean build files

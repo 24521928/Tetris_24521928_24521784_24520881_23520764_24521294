@@ -26,8 +26,9 @@ Release/
 # Dynamic libraries
 *.dll
 
-# Static libraries
+# Static libraries (but allow lib/*.dll.a for SFML linking)
 *.a
+!lib/*.dll.a
 *.lib
 
 # Executables
