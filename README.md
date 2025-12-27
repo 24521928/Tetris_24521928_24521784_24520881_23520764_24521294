@@ -27,7 +27,7 @@ A Tetris game developed in C++ using SFML.
 
 ## Installation and Build
 
-If using MingW64:
+If using MinGW64:
 ```bash
 pacman -S mingw-w64-x86_64-sfml
 ```
