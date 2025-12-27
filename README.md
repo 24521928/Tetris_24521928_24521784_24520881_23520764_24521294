@@ -27,21 +27,23 @@ A Tetris game developed in C++ using SFML.
 
 ## Installation and Build
 
-If using MSYS2:
+If using MingW64:
 ```bash
 pacman -S mingw-w64-x86_64-sfml
 ```
 
 Compile:
 ```bash
-g++ main.cpp -o main.exe -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
+g++ main.cpp -o tetris.exe -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
 ```
 
 Run:
 ```bash
-./main.exe
+./tetris.exe
 ```
 
+## Game Installation through Google Drive
+[Link drive](https://drive.google.com/file/d/1soyxjdsicefQ4ZKw-8ln_HtNcpxS90Hm/view?usp=sharing!)
 ## License
 
 MIT License - see LICENSE file
